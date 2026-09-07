@@ -52,7 +52,6 @@ export async function embedTexts(inputs: string[]): Promise<number[][]> {
 }
 
 export type RetrievedChunk = {
-  id: string;
   book: string;
   reference: string;
   content: string;
