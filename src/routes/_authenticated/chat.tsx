@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/chat")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: ChatPage;
+  component: ChatPage,
 });
 
 function SourceList({ sources }: { sources: SourceCitation[] }) {
