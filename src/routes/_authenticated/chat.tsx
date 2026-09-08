@@ -85,10 +85,10 @@ function ChatPage() {
   });
 
   useEffect(() => {
-    if (!activeThread && threads.data && threads.data.length > 0) {
-      setActiveThread(threads.data[0].id);
-    }
+    const first = threads.data?.[0];
+    if (!activeThread && first) setActiveThread(first.id);
   }, [threads.data, activeThread]);
+
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
