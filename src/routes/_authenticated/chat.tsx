@@ -79,6 +79,7 @@ function SourceList({ sources }: { sources: SourceCitation[] }) {
         ))}
       </div>
     </details>
+    </>
   );
 }
 
