@@ -39,7 +39,27 @@ export const Route = createFileRoute("/_authenticated/chat")({
 
 function SourceList({ sources }: { sources: SourceCitation[] }) {
   if (sources.length === 0) return null;
+  const top = sources.slice(0, 2);
   return (
+    <>
+    <div className="space-y-2">
+      <p className="text-[11px] font-semibold text-ink/50">המקורות המתאימים ביותר</p>
+      {top.map((source, index) => (
+        <div
+          key={`top-${index}`}
+          className="rounded-2xl border border-brand/20 bg-white/75 px-3 py-2.5 text-xs backdrop-blur-md"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-display text-sm font-bold">{source.book}</span>
+            <span className="text-ink/60">{source.reference}</span>
+            <span className="ml-auto rounded-full bg-lavender/70 px-2 py-0.5 text-[10px] font-semibold text-brand">
+              התאמה {Math.round(source.similarity * 100)}%
+            </span>
+          </div>
+          <p className="mt-2 leading-relaxed text-ink/70">{source.content}</p>
+        </div>
+      ))}
+    </div>
     <details className="group rounded-2xl border border-white/70 bg-white/60 px-4 py-2.5 text-xs backdrop-blur-md">
       <summary className="cursor-pointer list-none font-semibold text-brand">
         הצגת {sources.length} קטעי מקור שאוחזרו
@@ -59,6 +79,7 @@ function SourceList({ sources }: { sources: SourceCitation[] }) {
         ))}
       </div>
     </details>
+    </>
   );
 }
 
