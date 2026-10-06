@@ -62,19 +62,46 @@ function SourcesPage() {
   const [text, setText] = useState("");
   const [fileName, setFileName] = useState("");
   const [reading, setReading] = useState(false);
+  const [progress, setProgress] = useState("");
 
   const sources = useQuery({ queryKey: ["sources"], queryFn: () => fetchSources() });
 
   const uploadMutation = useMutation({
-    mutationFn: () =>
-      ingest({
-        data: {
-          book: book.trim(),
-          title: title.trim(),
-          reference: reference.trim() || undefined,
-          text,
-        },
-      }),
+    mutationFn: async () => {
+      // Send long documents in parts so each request stays small and fast.
+      const parts: string[] = [];
+      const PART = 60000;
+      let i = 0;
+      while (i < text.length) {
+        let end = Math.min(i + PART, text.length);
+        if (end < text.length) {
+          const nl = text.lastIndexOf("\n", end);
+          if (nl > i + PART / 2) end = nl;
+        }
+        parts.push(text.slice(i, end));
+        i = end;
+      }
+      let sourceId: string | undefined;
+      let total = 0;
+      for (let p = 0; p < parts.length; p++) {
+        if (parts[p].trim().length === 0) continue;
+        setProgress(`חלק ${p + 1} מתוך ${parts.length}`);
+        const r = await ingest({
+          data: {
+            book: book.trim(),
+            title: title.trim(),
+            reference: reference.trim() || undefined,
+            text: parts[p],
+            sourceId,
+            startIndex: total,
+          },
+        });
+        sourceId = r.sourceId;
+        total += r.chunks;
+      }
+      setProgress("");
+      return { sourceId: sourceId!, chunks: total };
+    },
     onSuccess: (result) => {
       toast.success(`המסמך נטען בהצלחה — ${result.chunks} קטעים נוספו למאגר`);
       setBook("");
@@ -84,13 +111,19 @@ function SourcesPage() {
       setFileName("");
       void queryClient.invalidateQueries({ queryKey: ["sources"] });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "הטעינה נכשלה"),
+    onError: (error) => {
+      setProgress("");
+      toast.error(error instanceof Error ? error.message : "הטעינה נכשלה");
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (sourceId: string) => remove({ data: { sourceId } }),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["sources"] }),
-    onError: () => toast.error("המחיקה נכשלה"),
+    onSuccess: () => {
+      toast.success("המקור נמחק");
+      void queryClient.invalidateQueries({ queryKey: ["sources"] });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "המחיקה נכשלה"),
   });
 
   const onFile = async (file: File | undefined) => {
@@ -189,7 +222,7 @@ function SourcesPage() {
               disabled={!canSubmit || uploadMutation.isPending}
               className="rounded-2xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-brand transition hover:bg-brand-strong disabled:opacity-50"
             >
-              {uploadMutation.isPending ? "מעבד ויוצר וקטורים…" : "טעינה למאגר"}
+              {uploadMutation.isPending ? `מעבד… ${progress}` : "טעינה למאגר"}
             </button>
             <span className="text-[11px] text-ink/45">
               {text.trim().length > 0 ? `${text.trim().length.toLocaleString()} תווים` : ""}
