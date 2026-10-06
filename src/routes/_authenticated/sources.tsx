@@ -84,14 +84,14 @@ function SourcesPage() {
       let sourceId: string | undefined;
       let total = 0;
       for (let p = 0; p < parts.length; p++) {
-        if (parts[p].trim().length === 0) continue;
+        if (parts[p]!.trim().length === 0) continue;
         setProgress(`חלק ${p + 1} מתוך ${parts.length}`);
         const r = await ingest({
           data: {
             book: book.trim(),
             title: title.trim(),
             reference: reference.trim() || undefined,
-            text: parts[p],
+            text: parts[p]!,
             sourceId,
             startIndex: total,
           },
@@ -249,7 +249,7 @@ function SourcesPage() {
                 </p>
               </div>
               <button
-                onClick={() => deleteMutation.mutate(source.id)}
+                onClick={() => { if (window.confirm(`למחוק את "${source.title}" מהמאגר?`)) deleteMutation.mutate(source.id); }}
                 className="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-ink/40 transition hover:bg-rose-50 hover:text-rose-500"
               >
                 מחיקה
